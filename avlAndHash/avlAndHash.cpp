@@ -3,5 +3,8 @@
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    AVL<int,int> avl;
+    for (int i = 0; i < 8; i++)
+        avl.Push(0+rand()%24, rand()%10);
+    std::cout << avl;
 }
