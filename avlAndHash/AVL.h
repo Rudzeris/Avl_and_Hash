@@ -8,7 +8,7 @@ class AVL {
 		Item* left;
 		Item* right;
 		int height;
-		Item(KeyType key, DataType data,int height=0) :
+		Item(KeyType key, DataType data, int height = 0) :
 			key{ key }, data{ data }, height{ height },
 			left{ nullptr }, right{ nullptr } {}
 		friend std::ostream& operator<< (std::ostream& _out, Item*& item) {
@@ -17,7 +17,7 @@ class AVL {
 			if (item->left) {
 				_out << item->left;
 			}
-			_out << "{K: " << item->key << ", D: " << item->data << "}"; 
+			_out << "{K: " << item->key << ", D: " << item->data << "}";
 			if (item->left) {
 				_out << item->right;
 			}
@@ -98,8 +98,86 @@ public:
 		Push(_pair.first, _pair.second);
 	}
 	// Получение / удаление
-	DataType Pop(KeyType key) {
+	void Pop(const KeyType& key) {
+		//DataType r;
+		if (begin->key == key) {
+			//r = begin->data;
+			Item* item = begin;
+			if (begin->left == nullptr)
+				begin = begin->right;
+			else
+				begin = begin->left;
+			delete item;
+			//return r;
+		}
+		Item* item = Search(key, begin);
+		if (item == nullptr)
+			return;
 
+		Item* del;
+		Item* ptr;
+		bool bLeft = false;
+		if (item->left->key == key) {
+			del = item->left;
+			bLeft = true;
+		}
+		else
+			del = item->right;
+
+		Item* left = del->left;
+		Item* right = del->right;
+		// TODO: Сравнить высоты и поставить верно
+
+		if (bLeft)
+		{
+			item->left = right;
+			ptr = right;
+		}
+		else {
+			item->right = left;
+			ptr = left;
+		}
+
+		bool added = false;
+		while (!added)
+		{
+			if (left->key < ptr->key) {
+				if (ptr->left)
+					ptr = ptr->left;
+				else {
+					ptr->left = left;
+					added = true;
+				}
+			}
+			else
+				if (ptr->right)
+					ptr = ptr->right;
+				else
+				{
+					ptr->right = left;
+					added = true;
+				}
+		}
+
+		delete del;
+
+	}
+
+	Item* Search(const KeyType& key, Item* item) {
+		if (item == nullptr)
+			return nullptr;
+
+		if (item->left != nullptr)
+			if (key == item->left->key)
+				return item;
+		if (item->right != nullptr)
+			if (key == item->right->key)
+				return item;
+
+		if (key > item->key)
+			return Search(key, item->right);
+		else
+			return Search(key, item->left);
 	}
 
 	void Clear() {
