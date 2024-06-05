@@ -25,13 +25,24 @@ class AVL {
 		}
 	};
 
-	Item* begin;
+	Item* root;
 
-	void Add(Item*& item, KeyType key, DataType data) {
-		if (!item)
+	void Add(Item*& item, const KeyType& key, const DataType& data) {
+		if (item == nullptr)
 			item = new Item(key, data);
-		if (key < item->key)
-			Add(item->left);
+		else if (key < item->key)
+			Add(item->left, key, data);
+		else if (key > item->key)
+			Add(item->right, key, data);
+		else item->data = data;
+		item->height = maxHeight(item)+1;
+	}
+
+	int maxHeight(Item* item) const {
+		if (item == nullptr) return -1;
+		int left = (item->left ? item->left->height : -1);
+		int right = (item->right ? item->right->height : -1);
+		return (left > right ? left : right);
 	}
 
 	// Очистка дерева
@@ -45,15 +56,23 @@ class AVL {
 		delete item;
 		item = nullptr;
 	}
+	void Print(Item* item,const char* symbol) const {
+		if (item) {
+			Print(item->left, symbol);
+			for (int i = 0; i < item->height; i++) std::cout << symbol;
+			std::cout << item->data << '\n';
+			Print(item->right, symbol);
+		}
+	}
 public:
 
-	AVL() :begin{ nullptr } { }
+	AVL() :root{ nullptr } { }
 
 	// Копирования
 
 	// Перемещение
-	AVL(AVL& avl) :begin{ avl.begin } {
-		avl.begin = nullptr;
+	AVL(AVL& avl) :root{ avl.root } {
+		avl.root = nullptr;
 	}
 
 	~AVL() {
@@ -62,55 +81,28 @@ public:
 
 	// Добавление
 	void Push(const KeyType& key, const DataType& data) {
-		if (begin == nullptr) {
-			begin = new Item(key, data);
-			return;
-		}
-
-		Item* ptr = begin;
-		bool added = false;
-		while (!added)
-		{
-			if (key < ptr->key) {
-				if (ptr->left)
-					ptr = ptr->left;
-				else {
-					ptr->left = new Item(key, data);
-					added = true;
-				}
-			}
-			else
-				if (key == ptr->key) {
-					ptr->data = data;
-					added = true;
-				}
-				else
-					if (ptr->right)
-						ptr = ptr->right;
-					else
-					{
-						ptr->right = new Item(key, data);
-						added = true;
-					}
-		}
+		std::cout << "Add: " << key << ":" << data << '\n';
+		Add(root, key, data);
 	}
 	void Push(const std::pair<const KeyType&, const DataType&>& _pair) {
 		Push(_pair.first, _pair.second);
 	}
-	// Получение / удаление
+	// Удаление
 	void Pop(const KeyType& key) {
 		//DataType r;
-		if (begin->key == key) {
+		// Начало
+		if (root->key == key) {
 			//r = begin->data;
-			Item* item = begin;
-			if (begin->left == nullptr)
-				begin = begin->right;
+			Item* item = root;
+			if (root->left == nullptr)
+				root = root->right;
 			else
-				begin = begin->left;
+				root = root->left;
 			delete item;
 			//return r;
 		}
-		Item* item = Search(key, begin);
+		// Ищем "до" ветвь
+		Item* item = Search(key, root);
 		if (item == nullptr)
 			return;
 
@@ -181,28 +173,24 @@ public:
 	}
 
 	void Clear() {
-		Clear(begin);
+		Clear(root);
 	}
 
 	// Вывод дерева
-	void Print(const Item*& item) const {
-		if (item) {
-			Print(item->left);
-			std::cout << item << ' ';
-			Print(item->right);
-		}
+	void Print(const char* symbol = " ") const {
+		Print(root,symbol);
 	}
 
 	// Узнать высоту
-	int Height(const Item*& item) {
+	/*int Height(const Item*& item) {
 		const Item* ptr = item;
 		int left = Height(ptr->left);
 		int rigth = Height(ptr->rigth);
 		return 1 + (left > rigth ? left : rigth);
-	}
+	}*/
 
 	friend std::ostream& operator<<(std::ostream& _out, AVL<KeyType, DataType>& avl) {
-		_out << avl.begin;
+		_out << avl.root;
 		return _out;
 	}
 };
