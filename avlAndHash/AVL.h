@@ -17,7 +17,8 @@ class AVL {
 			if (item->left) {
 				_out << item->left;
 			}
-			_out << "{K: " << item->key << ", D: " << item->data << "}";
+			for (int i = 0; i < item->height; i++) _out << '*';
+			_out << item->key << '\n';
 			if (item->left) {
 				_out << item->right;
 			}
@@ -27,6 +28,7 @@ class AVL {
 
 	Item* root;
 
+	// Добавление новой ветви
 	void Add(Item*& item, const KeyType& key, const DataType& data) {
 		if (item == nullptr)
 			item = new Item(key, data);
@@ -37,7 +39,16 @@ class AVL {
 		else item->data = data;
 		item->height = maxHeight(item)+1;
 	}
-
+	// Добавление существующей ветви
+	void Add(Item*& item, Item* added) {
+		if (item == nullptr)
+			item = added;
+		else if (added->key < item->key)
+			Add(item->left, added);
+		else if (added->key > item->key)
+			Add(item->rigth, added);
+		item->height = maxHeight(item);
+	}
 	int maxHeight(Item* item) const {
 		if (item == nullptr) return -1;
 		int left = (item->left ? item->left->height : -1);
@@ -56,6 +67,7 @@ class AVL {
 		delete item;
 		item = nullptr;
 	}
+
 	void Print(Item* item,const char* symbol) const {
 		if (item) {
 			Print(item->left, symbol);
@@ -84,6 +96,7 @@ public:
 		std::cout << "Add: " << key << ":" << data << '\n';
 		Add(root, key, data);
 	}
+
 	void Push(const std::pair<const KeyType&, const DataType&>& _pair) {
 		Push(_pair.first, _pair.second);
 	}
@@ -176,21 +189,20 @@ public:
 		Clear(root);
 	}
 
+	void RotateLeft() {
+
+	}
+
 	// Вывод дерева
 	void Print(const char* symbol = " ") const {
 		Print(root,symbol);
 	}
 
-	// Узнать высоту
-	/*int Height(const Item*& item) {
-		const Item* ptr = item;
-		int left = Height(ptr->left);
-		int rigth = Height(ptr->rigth);
-		return 1 + (left > rigth ? left : rigth);
-	}*/
-
 	friend std::ostream& operator<<(std::ostream& _out, AVL<KeyType, DataType>& avl) {
+		for (int i = 0; i < avl.root->height+3; i++) _out << '/';
+		_out << '\n';
 		_out << avl.root;
+		for (int i = 0; i < avl.root->height+3; i++) _out << '/';
 		return _out;
 	}
 };
