@@ -2,6 +2,9 @@
 
 template<class KeyType, class DataType>
 class AVL {
+
+	enum Rotate { Left, Right, None };
+
 	struct Item {
 		KeyType key;
 		DataType data;
@@ -18,7 +21,11 @@ class AVL {
 				_out << item->left;
 			}
 			for (int i = 0; i < item->height; i++) _out << '*';
+#ifdef PrintKey
 			_out << item->key << '\n';
+#else 
+			_out << item->data << '\n';
+#endif
 			if (item->left) {
 				_out << item->right;
 			}
@@ -37,25 +44,35 @@ class AVL {
 		else if (key > item->key)
 			Add(item->right, key, data);
 		else item->data = data;
-		int rt = rotateInf(item);
-		if (rt == 2)
-			RotateRight(item);
-		else if (rt == -2)
-			RotateLeft(item);
-		else
-			item->height = getHeight(item);
-	}
 
-	int rotateInf(Item* item) const {
+		switch (rotateInf(item)) {
+		case Rotate::Right:
+			RotateRight(item);
+			break;
+		case Rotate::Left:
+			RotateLeft(item);
+			break;
+		case Rotate::None:
+			item->height = getHeight(item);
+			break;
+		default:
+			throw std::exception("rotateInf is invalid");
+		}
+	}
+	// Вспомогательный метод для балансировки
+	Rotate rotateInf(Item* item) const {
 		if (item == nullptr)
-			return 0;
+			throw std::exception("rotateInf is invalid");
 
 		int left = (item->left ? item->left->height : -1);
 		int right = (item->right ? item->right->height : -1);
 
-		return left - right;
+		return
+			left - right == 2 ? Rotate::Right
+			: right - left == 2 ? Rotate::Left
+			: Rotate::None;
 	}
-
+	// Получить высоту для ветви
 	int getHeight(Item* item) const {
 		if (item == nullptr) return -1;
 
@@ -64,7 +81,6 @@ class AVL {
 
 		return (left > right ? left : right) + 1;
 	}
-
 	// Очистка дерева
 	void Clear(Item*& item) {
 		if (item->left) {
@@ -76,14 +92,102 @@ class AVL {
 		delete item;
 		item = nullptr;
 	}
+	// Поиск ключа, начиная с item
+	Item* Search(const KeyType& key, Item* item) {
+		if (item == nullptr)
+			return nullptr;
 
-	void Print(Item* item, const char* symbol) const {
-		if (item) {
-			Print(item->left, symbol);
-			for (int i = 0; i < item->height; i++) std::cout << symbol;
-			std::cout << item->data << '\n';
-			Print(item->right, symbol);
+		if (item->left != nullptr)
+			if (key == item->left->key)
+				return item;
+		if (item->right != nullptr)
+			if (key == item->right->key)
+				return item;
+
+		if (key > item->key)
+			return Search(key, item->right);
+		else
+			return Search(key, item->left);
+	}
+	// Левое вращение
+	bool RotateLeft(Item*& a) {
+#ifdef DEBUG
+		std::cout << '[' << a->key << ':' << a->data << "] rotate left\n";
+#endif
+		Item* b = a->right;
+		Item* l = a->left;
+
+		if (abs(getHeight(b) - getHeight(l)) != 2)
+			return false;
+
+		Item* c = b->left;
+		Item* r = b->right;
+
+		if (getHeight(c) <= getHeight(r)) {
+			// Малое левое вращение
+			a->right = c;
+			a->height = getHeight(a);
+			b->left = a;
+			a = b;
+			a->height = getHeight(a);
 		}
+		else {
+			// Большое левое вращение
+			Item* m = c->left;
+			Item* n = c->right;
+
+			a->right = m;
+			a->height = getHeight(a);
+
+			b->left = n;
+			b->height = getHeight(b);
+
+			c->left = a;
+			a = c;
+			a->right = b;
+			a->height = getHeight(a);
+		}
+		return true;
+	}
+	// Правое вращение
+	bool RotateRight(Item*& a) {
+#ifdef DEBUG
+		std::cout << '[' << a->key << ':' << a->data << "] rotate right\n";
+#endif
+		Item* b = a->left;
+		Item* r = a->right;
+
+		if (abs(getHeight(b) - getHeight(r)) != 2)
+			return false;
+
+		Item* l = b->left;
+		Item* c = b->right;
+
+		if (getHeight(c) <= getHeight(l)) {
+			a->left = c;
+			a->height = getHeight(a);
+
+			b->right = a;
+			a = b;
+			a->height = getHeight(a);
+		}
+		else {
+			Item* m = c->left;
+			Item* n = c->right;
+
+			a->left = n;
+			a->height = getHeight(a);
+
+			b->right = m;
+			b->height = getHeight(b);
+
+			c->right = a;
+			a = c;
+			a->left = b;
+			a->height = getHeight(a);
+		}
+
+		return true;
 	}
 public:
 
@@ -102,10 +206,12 @@ public:
 
 	// Добавление
 	void Push(const KeyType& key, const DataType& data) {
+#ifdef DEBUG
 		std::cout << "Add: " << key << ":" << data << '\n';
+#endif
 		Add(root, key, data);
 	}
-
+	// Добавление пар
 	void Push(const std::pair<const KeyType&, const DataType&>& _pair) {
 		Push(_pair.first, _pair.second);
 	}
@@ -176,101 +282,9 @@ public:
 		delete del;
 
 	}
-
-	Item* Search(const KeyType& key, Item* item) {
-		if (item == nullptr)
-			return nullptr;
-
-		if (item->left != nullptr)
-			if (key == item->left->key)
-				return item;
-		if (item->right != nullptr)
-			if (key == item->right->key)
-				return item;
-
-		if (key > item->key)
-			return Search(key, item->right);
-		else
-			return Search(key, item->left);
-	}
-
+	// Очистка
 	void Clear() {
 		Clear(root);
-	}
-	// Левое вращение
-	bool RotateLeft(Item*& a) {
-		Item* b = a->right;
-		Item* l = a->left;
-
-		if (abs(getHeight(b) - getHeight(l)) != 2)
-			return false;
-
-		Item* c = b->left;
-		Item* r = b->right;
-
-		if (getHeight(c) <= getHeight(r)) {
-			// Малое левое вращение
-			a->right = c;
-			a->height = getHeight(a);
-			b->left = a;
-			a = b;
-			a->height = getHeight(a);
-		}
-		else {
-			// Большое левое вращение
-			Item* m = c->left;
-			Item* n = c->right;
-
-			a->right = m;
-			a->height = getHeight(a);
-
-			b->left = n;
-			b->height = getHeight(b);
-
-			c->left = a;
-			a = c;
-			a->right = b;
-			a->height = getHeight(a);
-		}
-		return true;
-	}
-
-	// Правое вращение
-	bool RotateRight(Item*& a) {
-		Item* b = a->left;
-		Item* r = a->right;
-
-		if (abs(getHeight(b) - getHeight(r)) != 2)
-			return false;
-
-		Item* l = b->left;
-		Item* c = b->right;
-
-		if (getHeight(c) <= getHeight(l)) {
-			a->left = c;
-			a->height = getHeight(a);
-
-			b->right = a;
-			a = b;
-			a->height = getHeight(a);
-		}
-		else {
-			Item* m = c->left;
-			Item* n = c->right;
-
-			a->left = n;
-			a->height = getHeight(a);
-
-			b->right = m;
-			b->height = getHeight(b);
-
-			c->right = a;
-			a = c;
-			a->left = b;
-			a->height = getHeight(a);
-		}
-
-		return true;
 	}
 
 	// Вывод дерева
