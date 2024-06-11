@@ -3,7 +3,7 @@
 template<class KeyType, class DataType>
 class AVL {
 
-	enum Rotate { Left, Right, None };
+	enum Rotate { rotateLeft, rotateRight, rotateNone };
 
 	struct Item {
 		KeyType key;
@@ -46,13 +46,13 @@ class AVL {
 		else item->data = data;
 
 		switch (rotateInf(item)) {
-		case Rotate::Right:
+		case rotateRight:
 			RotateRight(item);
 			break;
-		case Rotate::Left:
+		case rotateLeft:
 			RotateLeft(item);
 			break;
-		case Rotate::None:
+		case rotateNone:
 			item->height = getHeight(item);
 			break;
 		default:
@@ -68,9 +68,9 @@ class AVL {
 		int right = (item->right ? item->right->height : -1);
 
 		return
-			left - right == 2 ? Rotate::Right
-			: right - left == 2 ? Rotate::Left
-			: Rotate::None;
+			left - right == 2 ? rotateRight
+			: right - left == 2 ? rotateLeft
+			: rotateNone;
 	}
 	// Получить высоту для ветви
 	int getHeight(Item* item) const {
@@ -92,23 +92,7 @@ class AVL {
 		delete item;
 		item = nullptr;
 	}
-	// Поиск ключа, начиная с item
-	Item* Search(const KeyType& key, Item* item) {
-		if (item == nullptr)
-			return nullptr;
 
-		if (item->left != nullptr)
-			if (key == item->left->key)
-				return item;
-		if (item->right != nullptr)
-			if (key == item->right->key)
-				return item;
-
-		if (key > item->key)
-			return Search(key, item->right);
-		else
-			return Search(key, item->left);
-	}
 	// Левое вращение
 	bool RotateLeft(Item*& a) {
 #ifdef DEBUG
@@ -189,6 +173,16 @@ class AVL {
 
 		return true;
 	}
+
+	// Поиск ключа, начиная с item
+	Item* Search(const KeyType& key, Item* item) {
+		return
+			item == nullptr ? nullptr :
+			key < item->key ? Search(item->left) :
+			key > item->key ? Search(item->right) :
+			item;
+	}
+
 public:
 
 	AVL() :root{ nullptr } { }
@@ -215,82 +209,11 @@ public:
 	void Push(const std::pair<const KeyType&, const DataType&>& _pair) {
 		Push(_pair.first, _pair.second);
 	}
-	// Удаление
-	void Pop(const KeyType& key) {
-		//DataType r;
-		// Начало
-		if (root->key == key) {
-			//r = begin->data;
-			Item* item = root;
-			if (root->left == nullptr)
-				root = root->right;
-			else
-				root = root->left;
-			delete item;
-			//return r;
-		}
-		// Ищем "до" ветвь
-		Item* item = Search(key, root);
-		if (item == nullptr)
-			return;
-
-		Item* del;
-		Item* ptr;
-		bool bLeft = false;
-		if (item->left->key == key) {
-			del = item->left;
-			bLeft = true;
-		}
-		else
-			del = item->right;
-
-		Item* left = del->left;
-		Item* right = del->right;
-		// TODO: Сравнить высоты и поставить верно
-
-		if (bLeft)
-		{
-			item->left = right;
-			ptr = right;
-		}
-		else {
-			item->right = left;
-			ptr = left;
-		}
-
-		bool added = false;
-		while (!added)
-		{
-			if (left->key < ptr->key) {
-				if (ptr->left)
-					ptr = ptr->left;
-				else {
-					ptr->left = left;
-					added = true;
-				}
-			}
-			else
-				if (ptr->right)
-					ptr = ptr->right;
-				else
-				{
-					ptr->right = left;
-					added = true;
-				}
-		}
-
-		delete del;
-
-	}
 	// Очистка
 	void Clear() {
 		Clear(root);
 	}
 
-	// Вывод дерева
-	void Print(const char* symbol = " ") const {
-		Print(root, symbol);
-	}
 
 	friend std::ostream& operator<<(std::ostream& _out, AVL<KeyType, DataType>& avl) {
 		for (int i = 0; i < avl.root->height + 3; i++) _out << '/';
