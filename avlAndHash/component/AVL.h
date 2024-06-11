@@ -26,7 +26,7 @@ class AVL {
 #else 
 			_out << item->data << '\n';
 #endif
-			if (item->left) {
+			if (item->right) {
 				_out << item->right;
 			}
 			return _out;
@@ -175,12 +175,56 @@ class AVL {
 	}
 
 	// Поиск ключа, начиная с item
-	Item* Search(const KeyType& key, Item* item) {
+	const Item* Search(const KeyType& key, Item* item) {
 		return
 			item == nullptr ? nullptr :
 			key < item->key ? Search(item->left) :
 			key > item->key ? Search(item->right) :
 			item;
+	}
+
+	void Pop(const KeyType& key, Item*& item) {
+		if (item == nullptr)
+			return;
+
+		if (key < item->key)
+			Pop(key, item->left);
+		else if (key > item->key)
+			Pop(key, item->right);
+		else {
+			// Удаление
+			Item* left = item->left;
+			Item* right = item->right;
+
+			delete item;
+
+			if (left && right) {
+
+			}
+			else if (left)
+				item = left;
+			else if (right)
+				item = right;
+			else
+				item = nullptr;
+
+			if (!item)
+				return;
+
+			switch (rotateInf(item)) {
+			case rotateRight:
+				RotateRight(item);
+				break;
+			case rotateLeft:
+				RotateLeft(item);
+				break;
+			case rotateNone:
+				item->height = getHeight(item);
+				break;
+			default:
+				throw std::exception("rotateInf is invalid");
+			}
+		}
 	}
 
 public:
@@ -209,11 +253,18 @@ public:
 	void Push(const std::pair<const KeyType&, const DataType&>& _pair) {
 		Push(_pair.first, _pair.second);
 	}
+	// Удаление по ключу
+	void Pop(const KeyType& key) {
+#ifdef DEBUG
+		std::cout << "Remove: " << key << '\n';
+#endif
+		Pop(key, root);
+	}
+
 	// Очистка
 	void Clear() {
 		Clear(root);
 	}
-
 
 	friend std::ostream& operator<<(std::ostream& _out, AVL<KeyType, DataType>& avl) {
 		for (int i = 0; i < avl.root->height + 3; i++) _out << '/';
