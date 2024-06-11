@@ -37,23 +37,32 @@ class AVL {
 		else if (key > item->key)
 			Add(item->right, key, data);
 		else item->data = data;
-		item->height = maxHeight(item)+1;
+		int rt = rotateInf(item);
+		if (rt == 2)
+			RotateRight(item);
+		else if (rt == -2)
+			RotateLeft(item);
+		else
+			item->height = getHeight(item);
 	}
-	// Добавление существующей ветви
-	void Add(Item*& item, Item* added) {
+
+	int rotateInf(Item* item) const {
 		if (item == nullptr)
-			item = added;
-		else if (added->key < item->key)
-			Add(item->left, added);
-		else if (added->key > item->key)
-			Add(item->rigth, added);
-		item->height = maxHeight(item);
-	}
-	int maxHeight(Item* item) const {
-		if (item == nullptr) return -1;
+			return 0;
+
 		int left = (item->left ? item->left->height : -1);
 		int right = (item->right ? item->right->height : -1);
-		return (left > right ? left : right);
+
+		return left - right;
+	}
+
+	int getHeight(Item* item) const {
+		if (item == nullptr) return -1;
+
+		int left = (item->left ? item->left->height : -1);
+		int right = (item->right ? item->right->height : -1);
+
+		return (left > right ? left : right) + 1;
 	}
 
 	// Очистка дерева
@@ -68,7 +77,7 @@ class AVL {
 		item = nullptr;
 	}
 
-	void Print(Item* item,const char* symbol) const {
+	void Print(Item* item, const char* symbol) const {
 		if (item) {
 			Print(item->left, symbol);
 			for (int i = 0; i < item->height; i++) std::cout << symbol;
@@ -188,21 +197,92 @@ public:
 	void Clear() {
 		Clear(root);
 	}
+	// Левое вращение
+	bool RotateLeft(Item*& a) {
+		Item* b = a->right;
+		Item* l = a->left;
 
-	void RotateLeft() {
+		if (abs(getHeight(b) - getHeight(l)) != 2)
+			return false;
 
+		Item* c = b->left;
+		Item* r = b->right;
+
+		if (getHeight(c) <= getHeight(r)) {
+			// Малое левое вращение
+			a->right = c;
+			a->height = getHeight(a);
+			b->left = a;
+			a = b;
+			a->height = getHeight(a);
+		}
+		else {
+			// Большое левое вращение
+			Item* m = c->left;
+			Item* n = c->right;
+
+			a->right = m;
+			a->height = getHeight(a);
+
+			b->left = n;
+			b->height = getHeight(b);
+
+			c->left = a;
+			a = c;
+			a->right = b;
+			a->height = getHeight(a);
+		}
+		return true;
+	}
+
+	// Правое вращение
+	bool RotateRight(Item*& a) {
+		Item* b = a->left;
+		Item* r = a->right;
+
+		if (abs(getHeight(b) - getHeight(r)) != 2)
+			return false;
+
+		Item* l = b->left;
+		Item* c = b->right;
+
+		if (getHeight(c) <= getHeight(l)) {
+			a->left = c;
+			a->height = getHeight(a);
+
+			b->right = a;
+			a = b;
+			a->height = getHeight(a);
+		}
+		else {
+			Item* m = c->left;
+			Item* n = c->right;
+
+			a->left = n;
+			a->height = getHeight(a);
+
+			b->right = m;
+			b->height = getHeight(b);
+
+			c->right = a;
+			a = c;
+			a->left = b;
+			a->height = getHeight(a);
+		}
+
+		return true;
 	}
 
 	// Вывод дерева
 	void Print(const char* symbol = " ") const {
-		Print(root,symbol);
+		Print(root, symbol);
 	}
 
 	friend std::ostream& operator<<(std::ostream& _out, AVL<KeyType, DataType>& avl) {
-		for (int i = 0; i < avl.root->height+3; i++) _out << '/';
+		for (int i = 0; i < avl.root->height + 3; i++) _out << '/';
 		_out << '\n';
 		_out << avl.root;
-		for (int i = 0; i < avl.root->height+3; i++) _out << '/';
+		for (int i = 0; i < avl.root->height + 3; i++) _out << '/';
 		return _out;
 	}
 };
