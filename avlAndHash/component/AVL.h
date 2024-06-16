@@ -14,6 +14,8 @@ class AVL {
 		Item(KeyType key, DataType data, int height = 0) :
 			key{ key }, data{ data }, height{ height },
 			left{ nullptr }, right{ nullptr } {}
+		Item(const Item& item) :
+			Item(item.key, item.data, item.height) {}
 		friend std::ostream& operator<< (std::ostream& _out, Item*& item) {
 			if (item == nullptr)
 				return _out;
@@ -83,6 +85,8 @@ class AVL {
 	}
 	// Очистка дерева
 	void Clear(Item*& item) {
+		if (!item)
+			return;
 		if (item->left) {
 			Clear(item->left);
 		}
@@ -92,7 +96,6 @@ class AVL {
 		delete item;
 		item = nullptr;
 	}
-
 	// Левое вращение
 	bool RotateLeft(Item*& a) {
 #ifdef DEBUG
@@ -173,7 +176,6 @@ class AVL {
 
 		return true;
 	}
-
 	// Поиск ключа, начиная с item
 	const Item* Search(const KeyType& key, Item* item) {
 		return
@@ -182,7 +184,12 @@ class AVL {
 			key > item->key ? Search(item->right) :
 			item;
 	}
-
+	const Item* Min(const Item*& item) {
+		return !item ? item :
+			item->left ? Min((const Item*&)item->left) :
+			item;
+	}
+	// Удаление
 	void Pop(const KeyType& key, Item*& item) {
 		if (item == nullptr)
 			return;
@@ -192,14 +199,17 @@ class AVL {
 		else if (key > item->key)
 			Pop(key, item->right);
 		else {
-			// Удаление
 			Item* left = item->left;
 			Item* right = item->right;
 
 			delete item;
 
 			if (left && right) {
-
+				const Item* min = Min((const Item*&)right);
+				item = new Item(*min);
+				item->left = left;
+				Pop(min->key, right);
+				item->right = right;
 			}
 			else if (left)
 				item = left;
@@ -207,23 +217,23 @@ class AVL {
 				item = right;
 			else
 				item = nullptr;
+		}
+		if (!item)
+			return;
 
-			if (!item)
-				return;
+		switch (rotateInf(item)) {
+		case rotateRight:
+			RotateRight(item);
+			break;
+		case rotateLeft:
+			RotateLeft(item);
+			break;
+		case rotateNone:
+			item->height = getHeight(item);
+			break;
+		default:
+			throw std::exception("rotateInf is invalid");
 
-			switch (rotateInf(item)) {
-			case rotateRight:
-				RotateRight(item);
-				break;
-			case rotateLeft:
-				RotateLeft(item);
-				break;
-			case rotateNone:
-				item->height = getHeight(item);
-				break;
-			default:
-				throw std::exception("rotateInf is invalid");
-			}
 		}
 	}
 
@@ -261,16 +271,20 @@ public:
 		Pop(key, root);
 	}
 
+	int getHeight() {
+		return root ? root->height : -1;
+	}
+
 	// Очистка
 	void Clear() {
 		Clear(root);
 	}
 
 	friend std::ostream& operator<<(std::ostream& _out, AVL<KeyType, DataType>& avl) {
-		for (int i = 0; i < avl.root->height + 3; i++) _out << '/';
+		for (int i = 0; i < avl.getHeight() + 3; i++) _out << '/';
 		_out << '\n';
-		_out << avl.root;
-		for (int i = 0; i < avl.root->height + 3; i++) _out << '/';
+		if (avl.root) _out << avl.root;
+		for (int i = 0; i < avl.getHeight() + 3; i++) _out << '/';
 		return _out;
 	}
 };
