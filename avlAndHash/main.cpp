@@ -41,5 +41,13 @@ int main()
     char key;
     std::cout << "Key: ";
     std::cin >> key;
-    std::cout << hash.Search(key);
+    std::cout << hash.Search(key) << '\n';
+    do {
+        std::cout << "Delete Key: ";
+        std::cin >> key;
+        hash.Pop(key);
+        hash.Print();
+    }while (key != '!');
+
+
 }

@@ -20,9 +20,10 @@ class Hash {
 	struct Item {
 		KeyType key;
 		ValueType value;
-		Item() :key{}, value{} {}
+		bool isEmpty;
+		Item() :key{}, value{}, isEmpty{ true } {}
 		Item(KeyType key, ValueType value) :
-			key{ key }, value{ value } {}
+			key{ key }, value{ value }, isEmpty{ false } {}
 		void Print() const {
 			std::cout << "[" << key << ':' << value << ']';
 		}
@@ -72,12 +73,32 @@ class Hash {
 			if (IsExists(key))
 				return;
 			Resize();
-			data[size++] = { key,value };
+			int i = 0;
+			for (i = 0; i < size; i++)
+				if (data[i].isEmpty)
+					break;
+			
+			data[i] = { key,value };
+
+			if (size == i)
+				size++;
+		}
+		bool Pop(const KeyType& key) {
+			bool remove = false;
+			for (int i = 0; i < size; i++)
+				if (data[i].key == key && !data[i].isEmpty)
+				{
+					data[i].isEmpty = true;
+					remove = true;
+				}
+			return remove;
 		}
 		void Print() const {
 			if (Empty())
 				return;
 			for (int i = 0; i < size; i++) {
+				if (data[i].isEmpty)
+					continue;
 				data[i].Print();
 				std::cout << " ";
 			}
@@ -102,10 +123,16 @@ public:
 
 	void Push(const KeyType& key, const ValueType& value) {
 		int index = GetIndex(key);
-		if (index < 0) index = maxSize + index;
+		while (index < 0) index = (maxSize + index) % maxSize;
 		
 		items[index].Push(key, value);
+	}
 
+	void Pop(const KeyType& key) {
+		int index = GetIndex(key);
+		while (index < 0) index = (maxSize + index)%maxSize;
+		
+		items[index].Pop(key);
 	}
 
 	ValueType Search(const KeyType& key) const {
