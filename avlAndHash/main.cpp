@@ -22,17 +22,17 @@ void DemoAVL() {
 
 
 class MyFunc : public UFuncForHash<char>{
-    virtual int GetHash(const char& key) {
+public:
+    virtual int operator()(const char& key) const {
         return key-'a';
     }
 };
 
 int main()
 {
-    Hash<char, int> hash(10);
+    Hash<char, int, MyFunc> hash(10);
     int b = 1;
     char a = 'a';
-    hash.SetHashFunction(new MyFunc());
     for(int i =0;i<50;i++)
         hash.Push(a++, b++);
 

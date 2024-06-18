@@ -3,8 +3,7 @@
 template<class KeyType>
 class UFuncForHash {
 public:
-	//virtual int operator()(const KeyType& key) = 0;
-	virtual int GetHash(const KeyType& key) = 0;
+	virtual int operator()(const KeyType& key) const = 0;
 };
 
 
@@ -14,9 +13,9 @@ bool SizeIsCorrect(int size) {
 	return true;
 }
 
-template <class KeyType, class ValueType>
+template <class KeyType, class ValueType, class UFunc>
 class Hash {
-	UFuncForHash<KeyType>* hashFunction;
+	UFunc hashFunction;
 
 	struct Item {
 		KeyType key;
@@ -41,7 +40,7 @@ class Hash {
 		bool Empty() const {
 			return size == 0;
 		}
-		bool IsExists(const KeyType& key) {
+		bool IsExists(const KeyType& key) const {
 			if (Empty())
 				return false;
 			for (int i = 0; i < size; i++)
@@ -49,7 +48,7 @@ class Hash {
 					return true;
 			return false;
 		}
-		ValueType Search(const KeyType& key) {
+		ValueType Search(const KeyType& key) const {
 			if (Empty())
 				throw "Search";
 			for (int i = 0; i < size; i++)
@@ -91,67 +90,40 @@ class Hash {
 	Items* items;
 	int maxSize;
 
-	bool HashIsCorrect(UFuncForHash<KeyType>* hash) {
-		if (hash == nullptr)
-			return false;
-		return true;
+	int GetIndex(const KeyType& key) const {
+		return hashFunction(key) % maxSize;
 	}
 public:
 	Hash(int bufferSize) :
 		maxSize{ SizeIsCorrect(bufferSize) ? bufferSize : defaultSize },
-		items{ nullptr },
-		hashFunction{ nullptr } {
+		items{ nullptr } {
 		items = new Items[maxSize];
 	}
 
-	void SetHashFunction(UFuncForHash<KeyType>* newHashFunction) {
-		if (!HashIsCorrect(newHashFunction))
-		{
-			std::cout << "Hash fuction is bad\n";
-			return;
-		}
-		if (this->hashFunction != nullptr)
-			delete this->hashFunction;
-		this->hashFunction = newHashFunction;
-	}
-
 	void Push(const KeyType& key, const ValueType& value) {
-		if (!HashIsCorrect(hashFunction))
-		{
-			std::cout << "Hash fuction is bad\n";
-			return;
-		}
-		int index = hashFunction->GetHash(key) % maxSize;
+		int index = GetIndex(key);
 		if (index < 0) index = maxSize + index;
 		
 		items[index].Push(key, value);
 
 	}
 
-	ValueType Search(const KeyType& key) {
-		if (!HashIsCorrect(hashFunction))
-		{
-			std::cout << "Hash fuction is bad\n";
-			return NULL;
-		}
-		int index = hashFunction->GetHash(key) % maxSize;
+	ValueType Search(const KeyType& key) const {
+
+		int index = GetIndex(key);
 		if (index < 0) index = maxSize + index;
 
 		if (items[index].IsExists(key))
 			return items[index].Search(key);
 		else
 			return NULL;
-
-
 	}
 
-	void Print() {
+	void Print() const {
 		if (items) {
 			for (int i = 0; i < maxSize; i++) {
 				items[i].Print();
 			}
 		}
 	}
-
-
 };
